@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <!--Third Party Stylesheets-->
+    <!--Our Stylesheets-->
+    <!--Third Party Javascript-->
+    <script src="js\jquery-1.11.0.min.js"></script>
+    <script src="js\webforms2.js"></script>
+    <!--Our Javascript-->
+    <script src="js\sp-security.js"></script>
+  <style>
+      .lable{
+          margin-right: 20px;
+          padding: 5px;
+          text-align: right;
+          border-right: 1px double #000;
+          width: 100px;
+          display: inline-block;
+          vertical-align: top;
+      }
+      .textbox {
+          height: 200px;
+          overflow-y: auto;
+          width: 200px;
+          display: inline-block;
+          border: 1px solid #333;
+      }
+      
+  </style>
+
+</head>
+<body>
+    <div id="sp-security">
+        <form class="validate-form" method="post">
+            <div class="input-group"></div>
+            <input type="submit" id="submitBtn" value="Submit" />
+        </form>
+
+    </div>
+  <script type="text/javascript">
+      $(document).ready(function () {
+          var $inputGroup = $('.input-group'),
+              query_map = {
+                  firstName: { type: 'text', required: true, display: 'First Name' },
+                  lastName: { type: 'text', required: true, display: 'Last Name' },
+                  date: { type: 'date', required: true, display: 'Date' },
+                  phone: { type: 'tel', required: true, display: 'Phone Number' },
+                  email: { type: 'emal', required: true, display: 'Email' }
+              },
+              href = "www.example.com?firstName=Dustin&lastName=Hardin&email=dustin.s.hardin.ctr@mail.mil",
+              queryStringStart = href.indexOf('?'),
+              queryString = href.substring(queryStringStart + 1),
+              queryStringArr = queryString.split('&'),
+              i, queryArr = [], name, value, queryObj;
+
+          for (i = 0; i < queryStringArr.length; i++) {
+              queryArr = queryStringArr[i].split('=');
+              name = queryArr[0];
+              value = queryArr[1];
+              console.log("Name: " + name + "\nValue: " + value);
+              queryObj = query_map[name] || false;
+              if (queryObj) {
+                  $('<span class="lable">' + (queryObj.display || name) + '</span><input type="' + (queryObj.text || 'text') + '" '+ (queryObj.required ? 'required' : '') +' /><br />').appendTo($inputGroup);  
+              }
+              
+          }
+
+      });
+  </script>
+</body>
+</html>
