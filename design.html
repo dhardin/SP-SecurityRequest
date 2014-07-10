@@ -51,7 +51,7 @@
                   email: { type: 'email', required: true, display: 'Email' },
                   description: { type: 'textarea', required: true, display: 'Description' }
               },
-              href = "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
+              href = window.location.href.indexOf('file:\\\\\\') == 0 ? window.location.href : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
               queryStringStart = href.indexOf('?'),
               queryString = href.substring(queryStringStart + 1),
               queryStringArr = queryString.split('&'),
