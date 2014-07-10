@@ -41,47 +41,68 @@
 
     </div>
   <script type="text/javascript">
+      query_map = {
+          firstName: { type: 'text', required: true, display: 'First Name' },
+          lastName: { type: 'text', required: true, display: 'Last Name' },
+          date: { type: 'date', required: true, display: 'Date' },
+          phone: { type: 'tel', required: true, display: 'Phone Number' },
+          email: { type: 'email', required: true, display: 'Email' },
+          description: { type: 'textarea', required: true, display: 'Description' }
+      };
+
       $(document).ready(function () {
           var $inputGroup = $('.input-group'),
-              query_map = {
-                  firstName: { type: 'text', required: true, display: 'First Name' },
-                  lastName: { type: 'text', required: true, display: 'Last Name' },
-                  date: { type: 'date', required: true, display: 'Date' },
-                  phone: { type: 'tel', required: true, display: 'Phone Number' },
-                  email: { type: 'email', required: true, display: 'Email' },
-                  description: { type: 'textarea', required: true, display: 'Description' }
-              },
               href = window.location.href.indexOf('file:\\\\\\') == 0 ? window.location.href : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
               queryStringStart = href.indexOf('?'),
               queryString = href.substring(queryStringStart + 1),
               queryStringArr = queryString.split('&'),
-              i, queryArr = [], name, value, queryObj;
+              queryArr = [];
 
-          for (i = 0; i < queryStringArr.length; i++) {
-              queryArr = queryStringArr[i].split('=');
-              name = queryArr[0];
-              value = queryArr[1];
-              console.log("Name: " + name + "\nValue: " + value);
-              queryObj = query_map[name] || false;
-              if (queryObj) {
-                  switch(queryObj.type){
-                      case 'textarea':
-                          $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                            + '<textarea rows="4" cols="50" class="input' + (queryObj.type || 'text') + '" ' + (queryObj.required ? 'required' : '') + '></textarea><br />')
-                                .val(value)
-                                .appendTo($inputGroup);
-                          break;
-                      default:
-                      $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                        +'<input class="input' + (queryObj.type || 'text') + '" type="' + (queryObj.type || 'text') + '" ' + (queryObj.required ? 'required' : '') + ' value="'+value+'"/><br />')
-                          .appendTo($inputGroup);
-                      break;
-                  }
-              }
-              
+          addInput($inputGroup, queryStringArr, queryStringArr.length, 0, function () { console.log('Done!'); });
+      });
+
+      function addInput($target, arr, max, index, callback) {
+          var queryArr,
+              queryObj,
+              name,
+              value;
+
+          if (!(arr instanceof Array) || index > max) {
+              return false;
           }
 
-      });
+          queryArr = arr[index].split('=');
+          name = queryArr[0];
+          value = queryArr[1];
+
+          console.log("Name: " + name + "\nValue: " + value);
+
+          queryObj = query_map[name] || false;
+          if (queryObj) {
+              switch (queryObj.type) {
+                  case 'textarea':
+                      $('<span class="lable">' + (queryObj.display || name) + '</span>'
+                        + '<textarea rows="4" cols="50" class="input' + (queryObj.type || 'text') + '" ' + (queryObj.required ? 'required' : '') + '></textarea><br />')
+                            .val(value)
+                            .appendTo($target);
+                      break;
+                  default:
+                      $('<span class="lable">' + (queryObj.display || name) + '</span>'
+                        + '<input class="input' + (queryObj.type || 'text') + '" type="' + (queryObj.type || 'text') + '" ' + (queryObj.required ? 'required' : '') + ' value="' + value + '"/><br />')
+                          .appendTo($target);
+                      break;
+              }
+          }
+
+          index++;
+          if (index < max) {
+              setTimeout(function () {
+                  addInput($target, arr, max, index, callback);
+              },10);
+          } else if (callback) {
+              callback();
+          }
+      }
   </script>
 </body>
 </html>
