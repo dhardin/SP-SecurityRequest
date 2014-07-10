@@ -34,7 +34,7 @@
 </head>
 <body>
     <div id="sp-security">
-        <form class="validate-form" method="post">
+        <form class="validate-form">
             <div class="input-group"></div>
             <input type="submit" id="submitBtn" value="Submit" />
         </form>
@@ -52,7 +52,9 @@
 
       $(document).ready(function () {
           var $inputGroup = $('.input-group'),
-              href = window.location.href.indexOf('file:\\\\\\') == 0 ? window.location.href : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
+              href = window.location.href.indexOf('file:\\\\\\') == 0
+                   ? window.location.href
+                   : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
               queryStringStart = href.indexOf('?'),
               queryString = href.substring(queryStringStart + 1),
               queryStringArr = queryString.split('&'),
@@ -82,13 +84,13 @@
               switch (queryObj.type) {
                   case 'textarea':
                       $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                        + '<textarea rows="4" cols="50" class="input' + (queryObj.type || 'text') + '" ' + (queryObj.required ? 'required' : '') + '></textarea><br />')
+                        + '<textarea rows="4" cols="50" class="input' + (queryObj.type || 'text') + '" required=' + queryObj.required + '></textarea><br />')
                             .val(value)
                             .appendTo($target);
                       break;
                   default:
                       $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                        + '<input class="input' + (queryObj.type || 'text') + '" type="' + (queryObj.type || 'text') + '" ' + (queryObj.required ? 'required' : '') + ' value="' + value + '"/><br />')
+                        + '<input class="input' + (queryObj.type || 'text') + '" type="' + (queryObj.type || 'text') + '" required=' + queryObj.required + ' value="' + value + '"/><br />')
                           .appendTo($target);
                       break;
               }
@@ -98,7 +100,7 @@
           if (index < max) {
               setTimeout(function () {
                   addInput($target, arr, max, index, callback);
-              },10);
+              },1000);
           } else if (callback) {
               callback();
           }

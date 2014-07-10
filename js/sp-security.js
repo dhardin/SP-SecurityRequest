@@ -15,7 +15,7 @@ var spdsecurity = (function () {
     //----------------- BEGIN MODULE SCOPE VARIABLES ---------------
     var
         configMap = {
-            main_html: '<div class="sp-security-container"></div>',
+            main_html: '<div class="sp-security-container"><form id="security-form"><input type="submit" id="submitBtn" value="Submit" /></form></div>',
             settings_map : {
                 guid: true,
                 formVarialbes: true
@@ -33,19 +33,21 @@ var spdsecurity = (function () {
         },
         jqueryMap = {},
         
-        initModule, setJqueryMap, saveListItem, printError, processResults;
+        initModule, setJqueryMap, saveListItem, printError, processResults, addInputItem;
 
     //----------------- END MODULE SCOPE VARIABLES ---------------
     //----------------- BEGIN UTILITY METHODS --------------------
     // Begin Utility Method /getWebs/
-    saveListItem = function (url, guid, callback) {
+    saveListItem = function (url, guid, payload, callback) {
         var results = [],
             
         // Create the SOAP request
          soapEnv =
             '<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\
                 <soap:Body>\
-                  <GetWebCollection xmlns="http://schemas.microsoft.com/sharepoint/soap/" />\
+                  <Batch OnError="Continue" PreCalc="TRUE" ListVersion="0"\
+                  ViewName="{'+guid+'}">\
+                   <Method ID="1" Cmd="New">'+payload+'</Method>\
                 </soap:Body>\
             </soap:Envelope>';
 
@@ -57,7 +59,7 @@ var spdsecurity = (function () {
             data: soapEnv,
             error: printError,
             complete:  function(xData, status){
-                $(xData.responseText).find("web").each(function () {
+                $(xData.responseText).find("result").each(function () {
                     var $this = $(this)[0],
                     title, url;
 
@@ -84,10 +86,10 @@ var spdsecurity = (function () {
     // End Utility Method /printError/
 
     // Begin Utility Method /processResult/
-    processResult = function (data) {
-        var i;
-
-     
+    processResult = function (results) {
+        if(!(results instanceof Array)){
+            addInputItem(jqueryMap.$form, results, results.max, 0, function () { console.log('done!'); });
+        }
     };
     // End Utility Method /processResult/
 
@@ -99,10 +101,57 @@ var spdsecurity = (function () {
         $container = stateMap.$container;
         
         jqueryMap = {
-            $container: $container
+            $container: $container,
+            $form: $('#security-form'),
+            $submitBtn: $('#submitBtn')
         };
     };
     // End DOM method /setJqueryMap/
+
+    // Begin DOM method /addInputItem/
+    addInputItem = function ($target, arr, max, index, callback) {
+        var queryArr,
+            queryObj,
+            name,
+            value;
+
+        if (!(arr instanceof Array) || index > max) {
+            return false;
+        }
+
+        queryArr = arr[index].split('=');
+        name = queryArr[0];
+        value = queryArr[1];
+
+        console.log("Name: " + name + "\nValue: " + value);
+
+        queryObj = query_map[name] || false;
+        if (queryObj) {
+            switch (queryObj.type) {
+                case 'textarea':
+                    $('<span class="lable">' + (queryObj.display || name) + '</span>'
+                      + '<textarea rows="4" cols="50" class="input' + (queryObj.type || 'text') + '" required=' + queryObj.required + '></textarea><br />')
+                          .val(value)
+                          .appendTo($target);
+                    break;
+                default:
+                    $('<span class="lable">' + (queryObj.display || name) + '</span>'
+                      + '<input class="input' + (queryObj.type || 'text') + '" type="' + (queryObj.type || 'text') + '" required=' + queryObj.required + ' value="' + value + '"/><br />')
+                        .appendTo($target);
+                    break;
+            }
+        }
+
+        index++;
+        if (index < max) {
+            setTimeout(function () {
+                addInput($target, arr, max, index, callback);
+            }, 1000);
+        } else if (callback) {
+            callback();
+        }
+    };
+    // End DOM method /addInputItem/
 
     //--------------------- END DOM METHODS --------------------
 
