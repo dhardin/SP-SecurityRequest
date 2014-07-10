@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <!--Third Party Stylesheets-->
+    <link rel="stylesheet" href="css\style.css" />
+
+    <!--Our Stylesheets-->
+
+    <!--Third Party Javascript-->
+    <script src="js\jquery-1.11.0.min.js"></script>
+    <!--Our Javascript-->
+    <script src="js\sp-security.js"></script>
+
+  
+</head>
+<body>
+    <div id="sp-security"></div>
+
+    <script type="text/javascript">
+        spsecurity.initModule($('#sp-security'),
+        {
+            guid: 'GUID of SharePoint List',
+            formVarialbes: [
+                { value: "FirstName", text: "First Name", type: "string" },
+                { value: "LastName", text: "Last Name", type: "string" },
+                { value: "Phone", text: "Phone Number", type: "uint", length: 10 }
+            ]
+        });
+    </script>
+
+</body>
+</html>
