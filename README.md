@@ -14,7 +14,9 @@ All files must be placed on the same domain as your SharePoint site to avoid err
 <div id="sp-security"></div>
 
 <script type="text/javascript">
-  spsecurity.initModule($('#sp-security'), {guid: 'GUID of SharePoint List', 
+  spsecurity.initModule($('#sp-security'), 
+  {
+      guid: 'GUID of SharePoint List', 
       formVarialbes: [
           {value:"FirstName", text:"First Name", type:"string"},
           {value:"LastName", text:"Last Name", type:"string"},
