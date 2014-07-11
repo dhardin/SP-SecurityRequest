@@ -33,7 +33,7 @@ var spdsecurity = (function () {
         },
         jqueryMap = {},
         
-        initModule, setJqueryMap, saveListItem, printError, processResults, addInputItem;
+        initModule, setJqueryMap, saveListItem, printError, processResults, addInputItem, buildPayload;
 
     //----------------- END MODULE SCOPE VARIABLES ---------------
     //----------------- BEGIN UTILITY METHODS --------------------
@@ -47,7 +47,6 @@ var spdsecurity = (function () {
                 <soap:Body>\
                   <Batch OnError="Continue" PreCalc="TRUE" ListVersion="0"\
                   ViewName="{'+guid+'}">\
-                   <Method ID="1" Cmd="New">'+payload+'</Method>\
                 </soap:Body>\
             </soap:Envelope>';
 
@@ -92,6 +91,49 @@ var spdsecurity = (function () {
         }
     };
     // End Utility Method /processResult/
+
+    // Begin Utility Method /buildPayload/
+    buildPayload = function (arr, index, obj_map, method, payload, callback) {
+        var i,
+            method_map = {
+                'new': true,
+                'update': true,
+                'delete': true
+            },
+            fileName, fieldValue, key, fieldPayload = "";
+
+        payload = payload || "";
+
+        if (!(arr instanceof Array) 
+            || !(obj_map instanceof Object) 
+            || !(method instanceof String)
+            || !(method_map.hasOwnProperty(method.toLowerCase()))
+            ){
+            return false;
+        }
+
+        if(index < arr.length){
+            index++;
+            for (key in arr[index]) {
+                fieldName = key;
+                fieldValue = arr[index][key];
+                fieldPayload += '<Field Name="' + fieldName + '">' + fieldValue + '</Field>';
+            }
+
+            payload += '<Method ID="' + (index + 1) + '" Cmd="' + method + '">' + fieldPayload + '</Method>';
+
+            setTimeout(function () {
+                buildPayload(arr, index, obj_map, method, payload, callback);
+            }, 10);
+
+        } else {
+            callback(payload);
+        }
+
+        
+        //<Method ID="1" Cmd="New">'+payload+'</Method>\
+    };
+    // End Utility Method /buildPayload/
 
     //----------------- END UTILITY METHODS ----------------------
     //--------------------- BEGIN DOM METHODS --------------------
