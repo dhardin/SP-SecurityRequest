@@ -15,25 +15,30 @@ var spdsecurity = (function () {
     //----------------- BEGIN MODULE SCOPE VARIABLES ---------------
     var
         configMap = {
-            main_html: '<div class="sp-security-container"><form id="security-form"><input type="submit" id="submitBtn" value="Submit" /></form></div>',
-            settings_map : {
+            main_html: '<div class="sp-security-container">'
+                        + '<form id="security-form">'
+                            + '<div class="input-group"></div>'
+                            + '<input type="submit" id="submitBtn" value="Submit" />'
+                        + '</form>'
+                    + '</div>',
+            settings_map: {
                 guid: true,
-                formVarialbes: true
+                formVariables: true
             },
-            security_item_html_map : {
-                listItem : "<li></li>"
+            security_item_html_map: {
+                listItem: "<li></li>"
             }
         },
         settings_map = {
             guid: "",
-            formVarialbes: []
+            formVariables: []
         },
         stateMap = {
             $container: null
         },
         jqueryMap = {},
-        
-        initModule, setJqueryMap, saveListItem, printError, processResults, addInputItem, buildPayload;
+
+        initModule, setJqueryMap, saveListItem, printError, processResults, addInputItem, buildPayload, populateForm, getFormValues, onSubmitClick;
 
     //----------------- END MODULE SCOPE VARIABLES ---------------
     //----------------- BEGIN UTILITY METHODS --------------------
@@ -47,6 +52,7 @@ var spdsecurity = (function () {
                 <soap:Body>\
                   <Batch OnError="Continue" PreCalc="TRUE" ListVersion="0"\
                   ViewName="{'+guid+'}">\
+                    '+payload+'\
                 </soap:Body>\
             </soap:Envelope>';
 
@@ -126,8 +132,11 @@ var spdsecurity = (function () {
                 buildPayload(arr, index, obj_map, method, payload, callback);
             }, 10);
 
-        } else {
+        } else if (callback) {
             callback(payload);
+            return payload;
+        } else {
+            return payload;
         }
 
         
@@ -145,7 +154,8 @@ var spdsecurity = (function () {
         jqueryMap = {
             $container: $container,
             $form: $('#security-form'),
-            $submitBtn: $('#submitBtn')
+            $submitBtn: $('#submitBtn'),
+            $inputGroup: $container.find('.input-group')
         };
     };
     // End DOM method /setJqueryMap/
@@ -155,7 +165,8 @@ var spdsecurity = (function () {
         var queryArr,
             queryObj,
             name,
-            value;
+            value,
+            $inputItem;
 
         if (!(arr instanceof Array) || index > max) {
             return false;
@@ -167,43 +178,104 @@ var spdsecurity = (function () {
 
         console.log("Name: " + name + "\nValue: " + value);
 
-        queryObj = query_map[name] || false;
+        queryObj = settings_map.formVariables[name] || false;
         if (queryObj) {
             switch (queryObj.type) {
                 case 'textarea':
-                    $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                      + '<textarea rows="4" cols="50" class="input' + (queryObj.type || 'text') + '" required=' + queryObj.required + '></textarea><br />')
-                          .val(value)
-                          .appendTo($target);
+                    $inputItem = $('<span class="lable">' + (queryObj.display || name) + '</span>'
+                      + '<textarea rows="4" cols="50" class="input" required=' + queryObj.required + '></textarea><br />');
                     break;
                 default:
-                    $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                      + '<input class="input' + (queryObj.type || 'text') + '" type="' + (queryObj.type || 'text') + '" required=' + queryObj.required + ' value="' + value + '"/><br />')
-                        .appendTo($target);
+                    $inputItem = $('<span class="lable">' + (queryObj.display || name) + '</span>'
+                      + '<input class="input" required=' + queryObj.required + ' value="' + value + '"/><br />');
                     break;
-            }
+            };
+
+            $inputItem.val(value)
+                      .data('info', queryObj)
+                      .appendTo($target);
         }
 
         index++;
         if (index < max) {
             setTimeout(function () {
                 addInput($target, arr, max, index, callback);
-            }, 1000);
+            }, 10);
         } else if (callback) {
             callback();
         }
     };
     // End DOM method /addInputItem/
 
-    //--------------------- END DOM METHODS --------------------
+    // Begin DOM Method /getQueryString/
+    populateForm = function () {
+        var $inputGroup = jqueryMap.$inputGroup,
+           href = window.location.href.indexOf('file:\\\\\\') == 0
+                ? window.location.href
+                : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
+           queryStringStart = href.indexOf('?'),
+           queryString = href.substring(queryStringStart + 1),
+           queryStringArr = queryString.split('&'),
+           queryArr = [];
 
+        addInput($inputGroup, queryStringArr, queryStringArr.length, 0, function () { console.log('Done!'); });
+    };
+    // End DOM Method /getQueryString/
+
+    // Begin DOM Method /getFormValues/
+    getFormValues = function () {
+        var arr = [], obj = {};
+        //example output
+        /*
+        {
+            <sharepoint_static_name>: <value>,
+            <sharepoint_static_name>: <value>
+        }
+        */
+        //iterate through each form input and bundle the info
+        //in a object
+        jqueryMap.$inputGroup.find('.input').each(function () {
+            var $this = $(this),
+                sharepoint_static_name = $this.data('info').sp_name || false,
+                value = $this.val();
+
+            // check if item does not have static sharepoint name
+            if (!sharepoint_static_name) {
+                return;
+            }
+
+            obj[sharepoint_static_name] = value;
+        });
+
+        //push object containing form data into arrary and return it
+        arr.push(obj);
+
+        return arr;
+
+    };
+    // End DOM Method /getFormValues/
+    //--------------------- END DOM METHODS --------------------
+    //--------------------- BEGIN EVENT HANDLERS ---------------
+    // Begin Event Handler /onSubmitClick/
+    onSubmitClick = function (e) {
+        //get all data from existing fields
+        var arr = getFormValues();
+        //save data
+        buildPayload(arr, 0, obj_map, 'New', '', function(results){
+            saveListItem(settings_map.url, settings_map.guid, results, processResults);
+        });
+    };
+    // End Event Handler /onSubmitClick/
+    //--------------------- END EVENT HANDLERS -----------------
+    //--------------------- BEGIN PUBLIC METHODS ---------------
     initModule = function ($container, options) {
         var $form = $(configMap.main_html);
 
         settings_map.guid = options.guid || "";
+        settings_map.url = options.url || "";
         settings_map.formVarialbes = options.formVarialbes || [];
 
-        if (settings_map.guid.length == 0) {
+        if (settings_map.guid.length == 0 || settings_map.url.length == 0) {
             return;
         }
 
@@ -211,7 +283,12 @@ var spdsecurity = (function () {
         stateMap.$container = $container;
 
         setJqueryMap();
+
+        populateForm();
+
+        jqueryMap.$submitBtn.on('click', onSubmitClick);
       
+        
     };
     return { initModule: initModule };
 }());

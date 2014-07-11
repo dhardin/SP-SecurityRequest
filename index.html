@@ -22,12 +22,17 @@
     <script type="text/javascript">
         spsecurity.initModule($('#sp-security'),
         {
+            url: 'URL of SharePoint Site',
             guid: 'GUID of SharePoint List',
-            formVarialbes: [
-                { value: "FirstName", text: "First Name", type: "string" },
-                { value: "LastName", text: "Last Name", type: "string" },
-                { value: "Phone", text: "Phone Number", type: "uint", length: 10 }
-            ]
+            formVarialbes: {
+                name: { type: 'text', required: true, display: 'Name', sp_name: 'Title' },
+                affiliation: { type: 'text', required: true, display: 'Affiliation', sp_name: 'Affiliation' },
+                sponsor: { type: 'text', required: true, display: 'Sponsor', sp_name: 'Sponsor' },
+                company: { type: 'text', required: true, display: 'Company', sp_name: 'Company' },
+                ipt: { type: 'text', required: true, display: 'IPT', sp_name: 'IPT' },
+                ia_training_date: { type: 'textarea', required: true, display: 'IA Training Date', sp_name: 'IA_x0020_Training_x0020_Date' },
+                description: { type: 'text', required: true, display: 'Description', sp_name: 'Body' }
+            }
         });
     </script>
 
