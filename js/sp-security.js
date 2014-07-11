@@ -210,9 +210,9 @@ var spdsecurity = (function () {
     // Begin DOM Method /getQueryString/
     populateForm = function () {
         var $inputGroup = jqueryMap.$inputGroup,
-           href = window.location.href.indexOf('file:\\\\\\') == 0
-                ? window.location.href
-                : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!",
+           href = window.location.href.indexOf('file:') > -1 // test to see if this is an offline file
+                ? window.location.href //set href to url since this is an online file
+                : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!", //else set some test varialbes
            queryStringStart = href.indexOf('?'),
            queryString = href.substring(queryStringStart + 1),
            queryStringArr = queryString.split('&'),
@@ -287,8 +287,6 @@ var spdsecurity = (function () {
         populateForm();
 
         jqueryMap.$submitBtn.on('click', onSubmitClick);
-      
-        
     };
     return { initModule: initModule };
 }());
