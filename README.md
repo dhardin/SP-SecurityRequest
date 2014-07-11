@@ -31,11 +31,11 @@ All files must be placed on the same domain as your SharePoint site to avoid err
 </script>
 ```
 ##Variables
--spsecurity
+- **spsecurity**
   - Description: Module namespace.  You must use this variable to configure and initialize the security module.
 
 ##Methods
-- initModule
+- **initModule**
   - Parameters
     - $target : Target DOM element that you wish to call initModule on.
     - options : Object containing the various options you wish to pass to initModule.
