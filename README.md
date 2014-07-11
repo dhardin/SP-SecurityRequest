@@ -41,17 +41,18 @@ All files must be placed on the same domain as your SharePoint site to avoid err
     - options : Object containing the various options you wish to pass to initModule.
 
 ##Options
-- url:
-  - Type: String
-  - Description: URL of the SharePoint site.
-- guid: 
-  - Type: String
-  - Description: GUID of the SharePoint list you wish to create the list item at.
-- formVarialbes:
-  - Type: Array
-  - Description: Array that contains objects with the following varibles:
+- **url**:
+  - *Type*: String
+  - *Description*: URL of the SharePoint site.
+- **guid**: 
+  - *Type*: String
+  - *Description*: GUID of the SharePoint list you wish to create the list item at.
+- **formVarialbes**:
+  - *Type*: Array
+  - *Description*: Array that contains objects with the following varibles:
     - value: Value of query string to parse.
     - text: Display value of query string on form
     - type: (Optional) Type of value allowed.
     - length: (Optional) Length of value allowed.
+    - sp_name: Static name of the SharePoint column
 
