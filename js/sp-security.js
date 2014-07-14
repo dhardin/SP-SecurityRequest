@@ -11,15 +11,16 @@
 */
 /*global $, spdsecurity */
 
-var spdsecurity = (function () {
+var spsecurity = (function () {
     //----------------- BEGIN MODULE SCOPE VARIABLES ---------------
     var
         configMap = {
             main_html: '<div class="sp-security-container">'
                         + '<form id="security-form">'
                             + '<div class="input-group"></div>'
-                            + '<input type="submit" id="submitBtn" value="Submit" />'
+                            + '<input type="button" id="submitBtn" value="Submit" />'
                         + '</form>'
+                        + '<div class="notification"></div>'
                     + '</div>',
             settings_map: {
                 guid: true,
@@ -27,6 +28,13 @@ var spdsecurity = (function () {
             },
             security_item_html_map: {
                 listItem: "<li></li>"
+            },
+            notification_map: {
+                wait: 'Please Wait...',
+                save: 'Saving...',
+                error: 'Error!',
+                success: 'Success!',
+                complete: 'Complete!'
             }
         },
         settings_map = {
@@ -38,33 +46,53 @@ var spdsecurity = (function () {
         },
         jqueryMap = {},
 
-        initModule, setJqueryMap, saveListItem, printError, processResults, addInputItem, buildPayload, populateForm, getFormValues, onSubmitClick;
+        initModule, setJqueryMap, saveListItem, printError, processResult, addInputItem, buildPayload, populateForm, getFormValues, getZRows, updateNotification, onSubmitClick;
 
     //----------------- END MODULE SCOPE VARIABLES ---------------
     //----------------- BEGIN UTILITY METHODS --------------------
+    // Find the rows in an XMLHttpRequest.  This includes a workaround for Safari and Chrome's
+    // aversion to the z:row namespace.
+    getZRows = function (rXML) {
+        var rows;
+        var itemCount = $(rXML).find("rs\\:data").attr("ItemCount");
+        if (rXML.getElementsByTagName("z:row").length == 0 && itemCount == undefined) {
+            rows = rXML.getElementsByTagNameNS("*", "row");
+        } else {
+            rows = rXML.getElementsByTagName("z:row");
+        }
+        return rows;
+    };
+
     // Begin Utility Method /getWebs/
     saveListItem = function (url, guid, payload, callback) {
         var results = [],
             
         // Create the SOAP request
          soapEnv =
-            '<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\
-                <soap:Body>\
-                  <Batch OnError="Continue" PreCalc="TRUE" ListVersion="0"\
-                  ViewName="{'+guid+'}">\
-                    '+payload+'\
-                </soap:Body>\
-            </soap:Envelope>';
+            '<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">'
+                + '<soap:Body>'
+                    + '<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">'
+                    + '<listName>' + guid + '</listName>'
+                    + '<updates>'
+                        + '<Batch OnError="Continue" PreCalc="True">'
+                            + payload
+                        + '</Batch>'
+                    + '</updates>'
+                    + '</UpdateListItems>'
+                + '</soap:Body>'
+            + '</soap:Envelope>';
 
-       
         $.ajax({
             url: url + "/_vti_bin/lists.asmx",
+            beforeSend: function(xhr){
+                xhr.setRequestHeader('SOAPAction', 'http://schemas.microsoft.com/sharepoint/soap/UpdateListItems');
+            },
             type: "POST",
             dataType: "xml",
             data: soapEnv,
             error: printError,
             complete:  function(xData, status){
-                $(xData.responseText).find("result").each(function () {
+                $(xData.responseText).find("rows").each(function () {
                     var $this = $(this)[0],
                     title, url;
 
@@ -85,6 +113,7 @@ var spdsecurity = (function () {
 
     // Begin Utility Method /printError/
     printError = function (XMLHttpRequest, textStatus, errorThrown) {
+        updateNotification(configMap.notification_map.error, "There was an error: " + errorThrown + " " + textStatus + "\n" + XMLHttpRequest.responseText);
         console.log("There was an error: " + errorThrown + " " + textStatus);
         console.log(XMLHttpRequest.responseText);
     };
@@ -92,9 +121,8 @@ var spdsecurity = (function () {
 
     // Begin Utility Method /processResult/
     processResult = function (results) {
-        if(!(results instanceof Array)){
-            addInputItem(jqueryMap.$form, results, results.max, 0, function () { console.log('done!'); });
-        }
+        updateNotification(configMap.notification_map.success, results);
+        console.log(results);
     };
     // End Utility Method /processResult/
 
@@ -111,22 +139,22 @@ var spdsecurity = (function () {
         payload = payload || "";
 
         if (!(arr instanceof Array) 
-            || !(obj_map instanceof Object) 
-            || !(method instanceof String)
+            || !(obj_map instanceof Object)
             || !(method_map.hasOwnProperty(method.toLowerCase()))
             ){
             return false;
         }
 
         if(index < arr.length){
-            index++;
             for (key in arr[index]) {
                 fieldName = key;
                 fieldValue = arr[index][key];
                 fieldPayload += '<Field Name="' + fieldName + '">' + fieldValue + '</Field>';
             }
 
-            payload += '<Method ID="' + (index + 1) + '" Cmd="' + method + '">' + fieldPayload + '</Method>';
+            
+            payload += '<Method ID="' + (index + 1) + '" Cmd="' + method + '">' + (method.toLowerCase() == 'new' ? '<Field Name="ID">New</Field>' : '') + fieldPayload + '</Method>';
+            index++;
 
             setTimeout(function () {
                 buildPayload(arr, index, obj_map, method, payload, callback);
@@ -139,10 +167,15 @@ var spdsecurity = (function () {
             return payload;
         }
 
-        
-        //<Method ID="1" Cmd="New">'+payload+'</Method>\
+   
     };
     // End Utility Method /buildPayload/
+
+    // Begin Utility Method /updateNotification/
+    updateNotification = function (header, msg) {
+        jqueryMap.$notification.html(header + "\n" + (msg || ""));
+    };
+    // End Utility Method /updateNotification/
 
     //----------------- END UTILITY METHODS ----------------------
     //--------------------- BEGIN DOM METHODS --------------------
@@ -155,7 +188,8 @@ var spdsecurity = (function () {
             $container: $container,
             $form: $('#security-form'),
             $submitBtn: $('#submitBtn'),
-            $inputGroup: $container.find('.input-group')
+            $inputGroup: $container.find('.input-group'),
+            $notification: $container.find('.notification')
         };
     };
     // End DOM method /setJqueryMap/
@@ -178,7 +212,7 @@ var spdsecurity = (function () {
 
         console.log("Name: " + name + "\nValue: " + value);
 
-        queryObj = settings_map.formVariables[name] || false;
+        queryObj = settings_map.formVariables[name.toLowerCase()] || false;
         if (queryObj) {
             switch (queryObj.type) {
                 case 'textarea':
@@ -187,7 +221,7 @@ var spdsecurity = (function () {
                     break;
                 default:
                     $inputItem = $('<span class="lable">' + (queryObj.display || name) + '</span>'
-                      + '<input class="input" required=' + queryObj.required + ' value="' + value + '"/><br />');
+                      + '<input class="input" type="'+queryObj.type+'" required=' + queryObj.required + ' value="' + value + '"/><br />');
                     break;
             };
 
@@ -199,7 +233,7 @@ var spdsecurity = (function () {
         index++;
         if (index < max) {
             setTimeout(function () {
-                addInput($target, arr, max, index, callback);
+                addInputItem($target, arr, max, index, callback);
             }, 10);
         } else if (callback) {
             callback();
@@ -210,7 +244,7 @@ var spdsecurity = (function () {
     // Begin DOM Method /getQueryString/
     populateForm = function () {
         var $inputGroup = jqueryMap.$inputGroup,
-           href = window.location.href.indexOf('file:') > -1 // test to see if this is an offline file
+           href = window.location.href.indexOf('file:') == -1 // test to see if this is an offline file
                 ? window.location.href //set href to url since this is an online file
                 : "www.example.com?firstName=Dustin&lastName=Hardin&email=someemail@email.com&description=Here is some text!", //else set some test varialbes
            queryStringStart = href.indexOf('?'),
@@ -218,7 +252,7 @@ var spdsecurity = (function () {
            queryStringArr = queryString.split('&'),
            queryArr = [];
 
-        addInput($inputGroup, queryStringArr, queryStringArr.length, 0, function () { console.log('Done!'); });
+        addInputItem($inputGroup, queryStringArr, queryStringArr.length, 0, function () { console.log('Done!'); });
     };
     // End DOM Method /getQueryString/
 
@@ -254,16 +288,22 @@ var spdsecurity = (function () {
 
     };
     // End DOM Method /getFormValues/
+
+
     //--------------------- END DOM METHODS --------------------
     //--------------------- BEGIN EVENT HANDLERS ---------------
     // Begin Event Handler /onSubmitClick/
     onSubmitClick = function (e) {
         //get all data from existing fields
         var arr = getFormValues();
+        updateNotification(configMap.notification_map.wait);
         //save data
-        buildPayload(arr, 0, obj_map, 'New', '', function(results){
-            saveListItem(settings_map.url, settings_map.guid, results, processResults);
-        });
+        setTimeout(function () {
+            buildPayload(arr, 0, {}, 'New', '', function (results) {
+                updateNotification(configMap.notification_map.save);
+                saveListItem(settings_map.url, settings_map.guid, results, processResult);
+            });
+        }, 10);
     };
     // End Event Handler /onSubmitClick/
     //--------------------- END EVENT HANDLERS -----------------
@@ -273,7 +313,7 @@ var spdsecurity = (function () {
 
         settings_map.guid = options.guid || "";
         settings_map.url = options.url || "";
-        settings_map.formVarialbes = options.formVarialbes || [];
+        settings_map.formVariables = options.formVariables || [];
 
         if (settings_map.guid.length == 0 || settings_map.url.length == 0) {
             return;
