@@ -36,6 +36,7 @@ All files must be placed on the same domain as your SharePoint site to avoid err
 
 ##Methods
 - **initModule**
+  - Description: Initializes the SP Security Request module.
   - Parameters
     - $target : Target DOM element that you wish to call initModule on.
     - options : Object containing the various options you wish to pass to initModule.
